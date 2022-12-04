@@ -1,37 +1,57 @@
-const btnSearch = document.querySelector(".search-btn");
-btnSearch.addEventListener("click", function () {
-  // FOR SEARCH INPUT
+// KETIKA TOMBOL SEARCH DI CLICK
+const btn = document.querySelector(".search-btn");
+btn.addEventListener("click", async function () {
+  // TANGKAP ELEMENT INPUT PENCARIAN
   const user = document.querySelector(".input-user");
-  fetch("http://www.omdbapi.com/?apikey=12137c7c&s=" + user.value)
-    .then((response) => response.json())
-    .then((response) => {
-      const movies = response.Search;
-      let cards = "";
-      movies.forEach((movie) => (cards += showCards(movie)));
-      const movSec = document.querySelector(".movies-section");
-      movSec.innerHTML = cards;
-
-      // FOR BUTTON SHOW DETAILS
-      const details = document.querySelectorAll(".btn-details");
-      details.forEach((btn) => {
-        btn.addEventListener("click", function () {
-          const imdbID = this.dataset.imdbid;
-          fetch(`http://www.omdbapi.com/?apikey=12137c7c&i=${imdbID}`)
-            .then((response) => response.json())
-            .then((movie) => {
-              const modalBody = document.querySelector(".modal-body");
-              let movieDetails = showDetails(movie);
-
-              const modalHead = document.querySelector(".modal-header");
-
-              modalHead.innerHTML = titleMovie(movie);
-              modalBody.innerHTML = movieDetails;
-            });
-        });
-      });
-    });
+  // MOVIES BERISI DATA FILM YANG DI CARI OLEH USER
+  const movies = await getMovies(user.value);
+  // JIKA DATA YANG DI CARI SUDAH DI DAPAT MAKA TAMPILKAN DATA KE MOVIE SECTION
+  updateUI(movies);
+  // KOSONGKAN FIELD SETELAH PENCARIAN
+  user.value = "";
 });
 
+// KETIKA TOMBOL SHOWDETAIL DI CLICK
+// KITA MEMERLUKAN SUATU CARA YAITU
+// EVENT BINDING
+document.addEventListener("click",async function (e) {
+  if (e.target.classList.contains("btn-details")) {
+    const imdbID = e.target.dataset.imdbid;
+    const movieDetail = await getMovieDetail(imdbID);
+    updateUIDetail(movieDetail);
+  }
+});
+
+function getMovieDetail(imdbid) {
+  return fetch("http://www.omdbapi.com/?apikey=12137c7c&i=" + imdbid)
+    .then((response) => response.json())
+    .then((movie) => movie);
+}
+
+function updateUIDetail(movie) {
+  const modalBody = document.querySelector(".modal-body");
+    let movieDetails = showDetails(movie);
+    const modalHead = document.querySelector(".modal-header");
+    modalHead.innerHTML = titleMovie(movie);
+    modalBody.innerHTML = movieDetails;
+}
+
+// MENGABIL DATA FILM DARI API
+function getMovies(value) {
+  return fetch("http://www.omdbapi.com/?apikey=12137c7c&s=" + value)
+    .then((response) => response.json())
+    .then((response) => response.Search);
+}
+
+// MENAMPILKAN TAMPILAN UNTUK MOVIE LIST
+function updateUI(movies) {
+  let cards = "";
+  movies.forEach((movie) => (cards += showCards(movie)));
+  const movSec = document.querySelector(".movies-section");
+  movSec.innerHTML = cards;
+}
+
+// MENAMPILKAN HTML UNTUK CARDS
 function showCards(movie) {
   return ` 
         <div class="col-sm-6 col-md-4 col-lg-3 my-5 cards">
@@ -52,24 +72,26 @@ function showCards(movie) {
         </div>`;
 }
 
+// MENAMPILKAN DATA DI MODAL BODY
 function showDetails(movie) {
-  return ` <div class="container-fluid border-3 border-primary">
-              <div class="row">
-                <div class="col-lg-6">
-                  <img src="${movie.Poster}" class="img-fluid card-img-top overflow-hidden border border-3 border-primary" />
-                </div>
-                <div class="col-md">
-                  <ul class="list-group">
-                    <li class="list-group-item"><strong>Director:</strong><br>${movie.Director}</li>
-                    <li class="list-group-item"><strong>Writer:</strong><br>${movie.Writer}</li>
-                    <li class="list-group-item"><strong>Actors:</strong><br>${movie.Actors}</li>
-                    <li class="list-group-item"><strong>Genre:</strong><br>${movie.Genre}</li>
-                    <li class="list-group-item"><strong>Plot:</strong><br>${movie.Plot}</li>
-                    <li class="list-group-item"><strong>Relased:</strong><br>${movie.Released}</li>
-                  </ul>
-                </div>
-              </div>
-            </div>`;
+  return `
+  <div class="container-fluid border-3 border-primary">
+    <div class="row">
+      <div class="col-lg-6">
+        <img src="${movie.Poster}" class="img-fluid card-img-top overflow-hidden border border-3 border-primary" />
+      </div>
+      <div class="col-md">
+        <ul class="list-group">
+          <li class="list-group-item"><strong>Director:</strong><br>${movie.Director}</li>
+          <li class="list-group-item"><strong>Writer:</strong><br>${movie.Writer}</li>
+          <li class="list-group-item"><strong>Actors:</strong><br>${movie.Actors}</li>
+          <li class="list-group-item"><strong>Genre:</strong><br>${movie.Genre}</li>
+          <li class="list-group-item"><strong>Plot:</strong><br>${movie.Plot}</li>
+          <li class="list-group-item"><strong>Relased:</strong><br>${movie.Released}</li>
+        </ul>
+      </div>
+    </div>
+  </div>`;
 }
 
 function titleMovie(movie) {
