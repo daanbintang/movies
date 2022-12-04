@@ -1,30 +1,76 @@
 // KETIKA TOMBOL SEARCH DI CLICK
 const btn = document.querySelector(".search-btn");
 btn.addEventListener("click", async function () {
-  // TANGKAP ELEMENT INPUT PENCARIAN
-  const user = document.querySelector(".input-user");
-  // MOVIES BERISI DATA FILM YANG DI CARI OLEH USER
-  const movies = await getMovies(user.value);
-  // JIKA DATA YANG DI CARI SUDAH DI DAPAT MAKA TAMPILKAN DATA KE MOVIE SECTION
-  updateUI(movies);
-  // KOSONGKAN FIELD SETELAH PENCARIAN
-  user.value = "";
+  try {
+    // TANGKAP ELEMENT INPUT PENCARIAN
+    const user = document.querySelector(".input-user");
+    // MOVIES BERISI DATA FILM YANG DI CARI OLEH USER
+    const movies = await getMovies(user.value);
+    // JIKA DATA YANG DI CARI SUDAH DI DAPAT MAKA TAMPILKAN DATA KE MOVIE SECTION
+    updateUI(movies);
+  } catch (err) {
+    notFound(); 
+  }
 });
 
+// MENGABIL DATA FILM DARI API
+function getMovies(value) {
+  return fetch("http://www.omdbapi.com/?apikey=12137c7c&s=" + value)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error();
+      }
+      return response.json();
+    })
+    .then((response) => {
+      if (response.Response === "False") {
+        throw new Error();
+      }
+      return response.Search;
+    });
+}
+
+// MENAMPILKAN TAMPILAN UNTUK MOVIE LIST
+function updateUI(movies) {
+  let cards = "";
+  movies.forEach((movie) => (cards += showCards(movie)));
+  const movSec = document.querySelector(".movies-section");
+  movSec.innerHTML = cards;
+}
+
+// KETIKA MOVIE TIDAK DI TEMUKAN
+function notFound() {
+  const alertNotFound = `
+  <div id="alert" class="alert alert-primary alert-dismissible fade show ms-" role="alert">
+    <strong>Movie Not Found!</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>`;
+  const sec = document.getElementById("sec-not-found");
+  sec.innerHTML = alertNotFound;
+}
+
 // KETIKA TOMBOL SHOWDETAIL DI CLICK
-// KITA MEMERLUKAN SUATU CARA YAITU
 // EVENT BINDING
 document.addEventListener("click",async function (e) {
-  if (e.target.classList.contains("btn-details")) {
-    const imdbID = e.target.dataset.imdbid;
-    const movieDetail = await getMovieDetail(imdbID);
-    updateUIDetail(movieDetail);
+  try {
+      if (e.target.classList.contains("btn-details")) {
+        const imdbID = e.target.dataset.imdbid;
+        const movieDetail = await getMovieDetail(imdbID);
+        updateUIDetail(movieDetail);
+      }
+  } catch (err) {
+    console.log(err);
   }
 });
 
 function getMovieDetail(imdbid) {
   return fetch("http://www.omdbapi.com/?apikey=12137c7c&i=" + imdbid)
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error();
+      }
+      return response.json();
+    })
     .then((movie) => movie);
 }
 
@@ -34,21 +80,6 @@ function updateUIDetail(movie) {
     const modalHead = document.querySelector(".modal-header");
     modalHead.innerHTML = titleMovie(movie);
     modalBody.innerHTML = movieDetails;
-}
-
-// MENGABIL DATA FILM DARI API
-function getMovies(value) {
-  return fetch("http://www.omdbapi.com/?apikey=12137c7c&s=" + value)
-    .then((response) => response.json())
-    .then((response) => response.Search);
-}
-
-// MENAMPILKAN TAMPILAN UNTUK MOVIE LIST
-function updateUI(movies) {
-  let cards = "";
-  movies.forEach((movie) => (cards += showCards(movie)));
-  const movSec = document.querySelector(".movies-section");
-  movSec.innerHTML = cards;
 }
 
 // MENAMPILKAN HTML UNTUK CARDS
